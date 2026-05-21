@@ -39,7 +39,18 @@ pub async fn transcribe_and_clean_gemini(
         model, api_key
     );
 
-    let system_instruction = "You are a professional voice dictation assistant. Your task is to transcribe the audio and clean it up. \
+    let language_name = get_language_name(language);
+    let system_instruction = if language_name == "English" {
+        "You are a professional voice dictation assistant. Your task is to transcribe the audio and clean it up. \
+The spoken language is English. You must write everything strictly in English.
+
+CRITICAL LANGUAGE RULES:
+1. WRITE ONLY IN ENGLISH: The spoken audio/text is in English. You must write everything strictly in English. Do NOT mix other languages, and do NOT use Devanagari script, Romanized Hindi, or any non-English script.
+2. TRANSLATE/CORRECT NON-ENGLISH: If there are any non-English words, phrases, or scripts in the raw input (due to transcription errors, noise, accents, or code-switching), you MUST translate them to English or correct them to fit the English context. The entire output must be 100% standard English.
+3. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+4. NO META-TEXT: Do not add any conversational responses, notes, explanations, prefix, or suffix. Return ONLY the finalized text."
+    } else if language_name == "Hindi" || language_name == "Auto-detect" {
+        "You are a professional voice dictation assistant. Your task is to transcribe the audio and clean it up. \
 Keep all original meaning but remove filler words (like 'um', 'uh', 'like'), correct backtracking, and format it into clean text.
 
 CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
@@ -50,10 +61,22 @@ CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
    - Example Spoken: \"Mera naam Hemanshu hai and I am a software engineer\"
    - Expected Output: \"मेरा नाम हिमांशु है and I am a software engineer\"
    - (DO NOT output: \"My name is Hemanshu and I am a software engineer\")
-5. NO META-TEXT: Do not add any conversational responses, notes, explanations, prefix, or suffix. Return ONLY the transcribed and cleaned text.";
+5. NO META-TEXT: Do not add any conversational responses, notes, explanations, prefix, or suffix. Return ONLY the transcribed and cleaned text."
+    } else {
+        "You are a professional voice dictation assistant. Your task is to transcribe the audio and clean it up. \
+Keep all original meaning but remove filler words (like 'um', 'uh', 'like'), correct backtracking, and format it into clean text.
 
-    let language_name = get_language_name(language);
-    let lang_instruction = if language_name == "Hindi" {
+CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
+1. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Transcribe exactly the words spoken in their native language.
+2. NATIVE SCRIPT: Write the spoken words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters).
+3. ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script).
+4. MIXED LANGUAGE HANDLING: For code-mixed speech (mixing the target language and English), write each word/phrase in its respective native script.
+5. NO META-TEXT: Do not add any conversational responses, notes, explanations, prefix, or suffix. Return ONLY the transcribed and cleaned text."
+    };
+
+    let lang_instruction = if language_name == "English" {
+        "IMPORTANT: The audio is spoken in English. You must transcribe everything strictly in English. Do NOT use any Hindi words, Devanagari script, Romanized Hindi, or non-English script. Translate or correct any non-English words to clean English.".to_string()
+    } else if language_name == "Hindi" {
         " IMPORTANT SCRIPT & TRANSLATION RULES: The audio is in Hindi (or Hinglish, a mix of Hindi and English). You MUST transcribe Hindi words in Devanagari script (e.g. 'मेरा', 'नाम', 'है', 'कैसे', 'हो') and English words in English/Latin script. Absolutely DO NOT translate Hindi words to English (e.g. do NOT transcribe 'मेरा नाम' as 'My name').".to_string()
     } else if language_name != "Auto-detect" {
         format!(" IMPORTANT: The audio is spoken in {} (or a mix of {} and English). You must transcribe exactly what is spoken in that same language mix. Write {} words in native script and English words in English script. Do NOT translate non-English words to English.", language_name, language_name, language_name)
@@ -136,7 +159,18 @@ pub async fn refine_with_ollama(
     let client = Client::new();
     let url = format!("{}/api/generate", ollama_url.trim_end_matches('/'));
 
-    let system_instruction = "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+    let language_name = get_language_name(language);
+    let system_instruction = if language_name == "English" {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+The spoken language is English. You must write everything strictly in English.
+
+CRITICAL LANGUAGE RULES:
+1. WRITE ONLY IN ENGLISH: The spoken audio/text is in English. You must write everything strictly in English. Do NOT mix other languages, and do NOT use Devanagari script, Romanized Hindi, or any non-English script.
+2. TRANSLATE/CORRECT NON-ENGLISH: If there are any non-English words, phrases, or scripts in the raw input (due to transcription errors, noise, accents, or code-switching), you MUST translate them to English or correct them to fit the English context. The entire output must be 100% standard English.
+3. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+4. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
+    } else if language_name == "Hindi" || language_name == "Auto-detect" {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
 CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
@@ -155,10 +189,23 @@ EXAMPLES:
 - Input: \"hello team aaj ki meeting ka agenda kya hai\"
   Output: \"hello team आज की मीटिंग का एजेंडा क्या है\"
 - Input: \"I will call you later, main abhi busy hoon\"
-  Output: \"I will call you later, मैं अभी बिजी हूँ\"";
+  Output: \"I will call you later, मैं अभी बिजी हूँ\""
+    } else {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+You must carefully process the text to ensure the correct script and language are preserved.
 
-    let language_name = get_language_name(language);
-    let lang_instruction = if language_name == "Hindi" {
+CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
+1. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep non-English words in their native language.
+2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters).
+3. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). Do NOT translate English words to the target language.
+4. MIXED LANGUAGE HANDLING: For code-mixed text, keep each word/phrase in its native script.
+5. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+6. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
+    };
+
+    let lang_instruction = if language_name == "English" {
+        "IMPORTANT: The text is in English. You must refine it strictly in English. Do NOT use any Hindi words, Devanagari script, Romanized Hindi, or non-English script. Translate or correct any non-English words to clean English.".to_string()
+    } else if language_name == "Hindi" {
         " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text in that same language mix. Write all Hindi words in Devanagari script (e.g. convert Romanized 'mera naam', 'kaise ho' to 'मेरा नाम', 'कैसे हो') and keep English words in English/Latin script. Absolutely DO NOT translate Hindi words to English (e.g. do NOT convert 'मेरा नाम' or 'mera naam' to 'My name').".to_string()
     } else if language_name != "Auto-detect" {
         format!(" IMPORTANT: The text is in {} (or a mix of {} and English). You must refine and clean up the text in that same language mix. Keep {} words in their native script and English words in English script. Do NOT translate non-English words to English.", language_name, language_name, language_name)
@@ -283,7 +330,18 @@ pub async fn refine_with_gemini(
         model, api_key
     );
 
-    let system_instruction = "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+    let language_name = get_language_name(language);
+    let system_instruction = if language_name == "English" {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+The spoken language is English. You must write everything strictly in English.
+
+CRITICAL LANGUAGE RULES:
+1. WRITE ONLY IN ENGLISH: The spoken audio/text is in English. You must write everything strictly in English. Do NOT mix other languages, and do NOT use Devanagari script, Romanized Hindi, or any non-English script.
+2. TRANSLATE/CORRECT NON-ENGLISH: If there are any non-English words, phrases, or scripts in the raw input (due to transcription errors, noise, accents, or code-switching), you MUST translate them to English or correct them to fit the English context. The entire output must be 100% standard English.
+3. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+4. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
+    } else if language_name == "Hindi" || language_name == "Auto-detect" {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
 CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
@@ -302,10 +360,23 @@ EXAMPLES:
 - Input: \"hello team aaj ki meeting ka agenda kya hai\"
   Output: \"hello team आज की मीटिंग का एजेंडा क्या है\"
 - Input: \"I will call you later, main abhi busy hoon\"
-  Output: \"I will call you later, मैं अभी बिजी हूँ\"";
+  Output: \"I will call you later, मैं अभी बिजी हूँ\""
+    } else {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+You must carefully process the text to ensure the correct script and language are preserved.
 
-    let language_name = get_language_name(language);
-    let lang_instruction = if language_name == "Hindi" {
+CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
+1. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep non-English words in their native language.
+2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters).
+3. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). Do NOT translate English words to the target language.
+4. MIXED LANGUAGE HANDLING: For code-mixed text, keep each word/phrase in its native script.
+5. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+6. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
+    };
+
+    let lang_instruction = if language_name == "English" {
+        "IMPORTANT: The text is in English. You must refine it strictly in English. Do NOT use any Hindi words, Devanagari script, Romanized Hindi, or non-English script. Translate or correct any non-English words to clean English.".to_string()
+    } else if language_name == "Hindi" {
         " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text in that same language mix. Write all Hindi words in Devanagari script (e.g. convert Romanized 'mera naam', 'kaise ho' to 'मेरा नाम', 'कैसे हो') and keep English words in English/Latin script. Absolutely DO NOT translate Hindi words to English (e.g. do NOT convert 'मेरा नाम' or 'mera naam' to 'My name').".to_string()
     } else if language_name != "Auto-detect" {
         format!(" IMPORTANT: The text is in {} (or a mix of {} and English). You must refine and clean up the text in that same language mix. Keep {} words in their native script and English words in English script. Do NOT translate non-English words to English.", language_name, language_name, language_name)
@@ -456,7 +527,18 @@ pub async fn refine_with_openai_compatible(
         }
     }
 
-    let system_instruction = "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+    let language_name = get_language_name(language);
+    let system_instruction = if language_name == "English" {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+The spoken language is English. You must write everything strictly in English.
+
+CRITICAL LANGUAGE RULES:
+1. WRITE ONLY IN ENGLISH: The spoken audio/text is in English. You must write everything strictly in English. Do NOT mix other languages, and do NOT use Devanagari script, Romanized Hindi, or any non-English script.
+2. TRANSLATE/CORRECT NON-ENGLISH: If there are any non-English words, phrases, or scripts in the raw input (due to transcription errors, noise, accents, or code-switching), you MUST translate them to English or correct them to fit the English context. The entire output must be 100% standard English.
+3. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+4. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
+    } else if language_name == "Hindi" || language_name == "Auto-detect" {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
 CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
@@ -475,10 +557,23 @@ EXAMPLES:
 - Input: \"hello team aaj ki meeting ka agenda kya hai\"
   Output: \"hello team आज की मीटिंग का एजेंडा क्या है\"
 - Input: \"I will call you later, main abhi busy hoon\"
-  Output: \"I will call you later, मैं अभी बिजी हूँ\"";
+  Output: \"I will call you later, मैं अभी बिजी हूँ\""
+    } else {
+        "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
+You must carefully process the text to ensure the correct script and language are preserved.
 
-    let language_name = get_language_name(language);
-    let lang_instruction = if language_name == "Hindi" {
+CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
+1. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep non-English words in their native language.
+2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters).
+3. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). Do NOT translate English words to the target language.
+4. MIXED LANGUAGE HANDLING: For code-mixed text, keep each word/phrase in its native script.
+5. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+6. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
+    };
+
+    let lang_instruction = if language_name == "English" {
+        "IMPORTANT: The text is in English. You must refine it strictly in English. Do NOT use any Hindi words, Devanagari script, Romanized Hindi, or non-English script. Translate or correct any non-English words to clean English.".to_string()
+    } else if language_name == "Hindi" {
         " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text in that same language mix. Write all Hindi words in Devanagari script (e.g. convert Romanized 'mera naam', 'kaise ho' to 'मेरा नाम', 'कैसे हो') and keep English words in English/Latin script. Absolutely DO NOT translate Hindi words to English (e.g. do NOT convert 'मेरा नाम' or 'mera naam' to 'My name').".to_string()
     } else if language_name != "Auto-detect" {
         format!(" IMPORTANT: The text is in {} (or a mix of {} and English). You must refine and clean up the text in that same language mix. Keep {} words in their native script and English words in English script. Do NOT translate non-English words to English.", language_name, language_name, language_name)
