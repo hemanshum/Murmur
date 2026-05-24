@@ -965,6 +965,16 @@ listen("text-prepared", (event) => {
   }
 });
 
+// Listen for tab switching requests from the system tray
+listen("show-tab", (event) => {
+  const tabName = event.payload;
+  if (tabName === "dashboard" && tabDash) {
+    tabDash.click();
+  } else if (tabName === "settings" && tabSettings) {
+    tabSettings.click();
+  }
+});
+
 // Copy Last Prepared Text handler
 btnCopyLast.addEventListener("click", async () => {
   const text = lastPreparedText.value;

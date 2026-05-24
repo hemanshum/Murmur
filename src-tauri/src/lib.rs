@@ -9,6 +9,8 @@ mod downloader;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 
 use crate::audio::AudioRecorder;
 use crate::hotkey::{HotkeyEvent, HotkeyListener};
@@ -396,6 +398,12 @@ pub fn run() {
             is_recording: AtomicBool::new(false),
             status: Mutex::new("Idle".to_string()),
         })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let _ = window.hide();
+                api.prevent_close();
+            }
+        })
         .setup(|app| {
             let app_handle = app.handle().clone();
             
@@ -425,6 +433,64 @@ pub fn run() {
             });
 
             app.manage(listener);
+
+            // System Tray Menu and Icon
+            let home_i = MenuItemBuilder::new("Home").id("home").build(app)?;
+            let settings_i = MenuItemBuilder::new("Settings").id("settings").build(app)?;
+            let exit_i = MenuItemBuilder::new("Exit").id("exit").build(app)?;
+            let menu = MenuBuilder::new(app)
+                .item(&home_i)
+                .item(&settings_i)
+                .item(&exit_i)
+                .build()?;
+
+            let mut tray_builder = TrayIconBuilder::new()
+                .menu(&menu)
+                .on_menu_event(|app, event| {
+                    match event.id().as_ref() {
+                        "home" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.unminimize();
+                                let _ = window.set_focus();
+                                let _ = app.emit("show-tab", "dashboard");
+                            }
+                        }
+                        "settings" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.unminimize();
+                                let _ = window.set_focus();
+                                let _ = app.emit("show-tab", "settings");
+                            }
+                        }
+                        "exit" => {
+                            app.exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: tauri::tray::MouseButton::Left,
+                        button_state: tauri::tray::MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    }
+                });
+
+            if let Some(icon) = app.default_window_icon().cloned() {
+                tray_builder = tray_builder.icon(icon);
+            }
+
+            let _tray = tray_builder.build(app)?;
 
             Ok(())
         })
