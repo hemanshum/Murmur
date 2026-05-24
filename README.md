@@ -65,6 +65,11 @@ Before setting up OpenWispr, ensure you have the following installed on your mac
    npm run tauri build
    ```
 
+### Releases & Downloads
+
+You can download the latest pre-built installer for version **0.1.1** here:
+- **[Download v0.1.1 Release](https://github.com/hemanshum/Murmur/releases/tag/0.1.1)**
+
 ---
 
 ## 🔒 Security & Local Configs
