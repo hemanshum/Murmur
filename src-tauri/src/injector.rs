@@ -158,16 +158,16 @@ pub fn inject_text(text: &str) -> Result<(), String> {
         unsafe {
             windows_sys::Win32::UI::WindowsAndMessaging::SetForegroundWindow(target_hwnd);
             // Give Windows a tiny moment to switch focus
-            thread::sleep(Duration::from_millis(50));
+            thread::sleep(Duration::from_millis(100));
         }
     }
 
-    // Try direct Unicode SendInput first
-    match inject_via_unicode(text) {
+    // Try clipboard injection first as it is much more reliable for modern Windows apps (like Notepad)
+    match inject_via_clipboard(text) {
         Ok(_) => Ok(()),
         Err(e) => {
-            eprintln!("Direct Unicode injection failed: {}. Falling back to clipboard injection.", e);
-            inject_via_clipboard(text)
+            eprintln!("Clipboard injection failed: {}. Falling back to direct Unicode injection.", e);
+            inject_via_unicode(text)
         }
     }
 }

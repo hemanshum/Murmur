@@ -93,6 +93,12 @@ unsafe extern "system" fn low_level_keyboard_proc(
     if n_code >= 0 {
         let kbd_struct = *(l_param as *const KBDLLHOOKSTRUCT);
 
+        // Ignore synthetic/injected keystroke events (like the ones we send via SendInput)
+        let is_injected = (kbd_struct.flags & 0x10) != 0 || (kbd_struct.flags & 0x02) != 0;
+        if is_injected {
+            return CallNextHookEx(HOOK_HANDLE, n_code, w_param, l_param);
+        }
+
         let vk = kbd_struct.vkCode;
         let is_ctrl = vk == VK_LCONTROL as u32 || vk == VK_RCONTROL as u32;
 

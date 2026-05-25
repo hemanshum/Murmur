@@ -424,6 +424,14 @@ async fn refine_text_internal(
     }
 }
 
+fn focus_window(window: &tauri::WebviewWindow) {
+    let _ = window.show();
+    let _ = window.unminimize();
+    let _ = window.set_always_on_top(true);
+    let _ = window.set_always_on_top(false);
+    let _ = window.set_focus();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -485,17 +493,13 @@ pub fn run() {
                     match event.id().as_ref() {
                         "home" => {
                             if let Some(window) = app.get_webview_window("main") {
-                                let _ = window.show();
-                                let _ = window.unminimize();
-                                let _ = window.set_focus();
+                                focus_window(&window);
                                 let _ = app.emit("show-tab", "dashboard");
                             }
                         }
                         "settings" => {
                             if let Some(window) = app.get_webview_window("main") {
-                                let _ = window.show();
-                                let _ = window.unminimize();
-                                let _ = window.set_focus();
+                                focus_window(&window);
                                 let _ = app.emit("show-tab", "settings");
                             }
                         }
@@ -514,9 +518,7 @@ pub fn run() {
                     {
                         let app = tray.app_handle();
                         if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.unminimize();
-                            let _ = window.set_focus();
+                            focus_window(&window);
                         }
                     }
                 });
