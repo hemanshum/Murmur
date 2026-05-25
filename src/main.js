@@ -742,8 +742,9 @@ dashboardLanguageSelect.addEventListener("change", async () => {
   showToast("Language updated");
 });
 
-selectTranscriptionLanguage.addEventListener("change", () => {
+selectTranscriptionLanguage.addEventListener("change", async () => {
   dashboardLanguageSelect.value = selectTranscriptionLanguage.value;
+  await autoSaveConfig();
 });
 
 // Auto Save Settings

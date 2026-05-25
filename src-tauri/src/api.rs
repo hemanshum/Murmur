@@ -50,14 +50,14 @@ CRITICAL LANGUAGE RULES:
 2. TRANSLATE/CORRECT NON-ENGLISH: If there are any non-English words, phrases, or scripts in the raw input (due to transcription errors, noise, accents, or code-switching), you MUST translate them to English or correct them to fit the English context. The entire output must be 100% standard English.
 3. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
 4. NO META-TEXT: Do not add any conversational responses, notes, explanations, prefix, or suffix. Return ONLY the finalized text."
-    } else if language_name == "Hindi" || language_name == "Auto-detect" {
+    } else if language_name == "Hindi" {
         "You are a professional voice dictation assistant. Your task is to transcribe the audio and clean it up. \
 Keep all original meaning but remove filler words (like 'um', 'uh', 'like'), correct backtracking, and format it into clean text.
 
 CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
 1. DO NOT TRANSLATE: Absolutely DO NOT translate any spoken words to English or any other language. Transcribe exactly the words spoken in their native language.
 2. HINDI IN DEVANAGARI: If the speaker speaks in Hindi (or a mix of Hindi and English), you MUST write all Hindi words/phrases in Devanagari script.
-3. ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script).
+3. ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). For example, 'software engineer', 'developer', 'meeting', 'call you later' must remain in English script. Do NOT translate English words to Hindi.
 4. MIXED LANGUAGE (HINGLISH) HANDLING: For code-mixed speech (mixing Hindi and English), write each word/phrase in its respective native script (e.g., Hindi in Devanagari script, English in English script).
    - Example Spoken: \"Mera naam Hemanshu hai and I am a software engineer\"
    - Expected Output: \"मेरा नाम हिमांशु है and I am a software engineer\"
@@ -69,7 +69,7 @@ Keep all original meaning but remove filler words (like 'um', 'uh', 'like'), cor
 
 CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
 1. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Transcribe exactly the words spoken in their native language.
-2. NATIVE SCRIPT: Write the spoken words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters).
+2. NATIVE SCRIPT: Write the spoken words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters, Hindi in Devanagari script).
 3. ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script).
 4. MIXED LANGUAGE HANDLING: For code-mixed speech (mixing the target language and English), write each word/phrase in its respective native script.
 5. NO META-TEXT: Do not add any conversational responses, notes, explanations, prefix, or suffix. Return ONLY the transcribed and cleaned text."
@@ -170,7 +170,7 @@ CRITICAL LANGUAGE RULES:
 2. TRANSLATE/CORRECT NON-ENGLISH: If there are any non-English words, phrases, or scripts in the raw input (due to transcription errors, noise, accents, or code-switching), you MUST translate them to English or correct them to fit the English context. The entire output must be 100% standard English.
 3. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
 4. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
-    } else if language_name == "Hindi" || language_name == "Auto-detect" {
+    } else if language_name == "Hindi" {
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
@@ -186,18 +186,18 @@ EXAMPLES:
 - Input: \"mera naam hemanshu hai and I am a software engineer\"
   Output: \"मेरा नाम हिमांशु है and I am a software engineer\"
 - Input: \"aaj weather bahut achha hai main office ja raha hoon\"
-  Output: \"आज वेदर बहुत अच्छा है मैं ऑफिस जा रहा हूँ\"
+  Output: \"आज weather बहुत अच्छा है मैं office जा रहा हूँ\"
 - Input: \"hello team aaj ki meeting ka agenda kya hai\"
-  Output: \"hello team आज की मीटिंग का एजेंडा क्या है\"
+  Output: \"hello team आज की meeting का agenda क्या है\"
 - Input: \"I will call you later, main abhi busy hoon\"
-  Output: \"I will call you later, मैं अभी बिजी हूँ\""
+  Output: \"I will call you later, मैं अभी busy हूँ\""
     } else {
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
 CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
 1. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep non-English words in their native language.
-2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters).
+2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters, Hindi in Devanagari script).
 3. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). Do NOT translate English words to the target language.
 4. MIXED LANGUAGE HANDLING: For code-mixed text, keep each word/phrase in its native script.
 5. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
@@ -341,7 +341,7 @@ CRITICAL LANGUAGE RULES:
 2. TRANSLATE/CORRECT NON-ENGLISH: If there are any non-English words, phrases, or scripts in the raw input (due to transcription errors, noise, accents, or code-switching), you MUST translate them to English or correct them to fit the English context. The entire output must be 100% standard English.
 3. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
 4. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
-    } else if language_name == "Hindi" || language_name == "Auto-detect" {
+    } else if language_name == "Hindi" {
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
@@ -357,18 +357,18 @@ EXAMPLES:
 - Input: \"mera naam hemanshu hai and I am a software engineer\"
   Output: \"मेरा नाम हिमांशु है and I am a software engineer\"
 - Input: \"aaj weather bahut achha hai main office ja raha hoon\"
-  Output: \"आज वेदर बहुत अच्छा है मैं ऑफिस जा रहा हूँ\"
+  Output: \"आज weather बहुत अच्छा है मैं office जा रहा हूँ\"
 - Input: \"hello team aaj ki meeting ka agenda kya hai\"
-  Output: \"hello team आज की मीटिंग का एजेंडा क्या है\"
+  Output: \"hello team आज की meeting का agenda क्या है\"
 - Input: \"I will call you later, main abhi busy hoon\"
-  Output: \"I will call you later, मैं अभी बिजी हूँ\""
+  Output: \"I will call you later, मैं अभी busy हूँ\""
     } else {
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
 CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
 1. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep non-English words in their native language.
-2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters).
+2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters, Hindi in Devanagari script).
 3. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). Do NOT translate English words to the target language.
 4. MIXED LANGUAGE HANDLING: For code-mixed text, keep each word/phrase in its native script.
 5. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
@@ -466,6 +466,8 @@ pub async fn transcribe_local_whisper(
     let parent_dir_str = parent_dir.to_string_lossy().to_string();
 
     let mut command = Command::new("whisper");
+    #[cfg(windows)]
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
     command
         .arg(wav_path)
         .arg("--model")
@@ -538,7 +540,7 @@ CRITICAL LANGUAGE RULES:
 2. TRANSLATE/CORRECT NON-ENGLISH: If there are any non-English words, phrases, or scripts in the raw input (due to transcription errors, noise, accents, or code-switching), you MUST translate them to English or correct them to fit the English context. The entire output must be 100% standard English.
 3. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
 4. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text."
-    } else if language_name == "Hindi" || language_name == "Auto-detect" {
+    } else if language_name == "Hindi" {
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
@@ -554,18 +556,18 @@ EXAMPLES:
 - Input: \"mera naam hemanshu hai and I am a software engineer\"
   Output: \"मेरा नाम हिमांशु है and I am a software engineer\"
 - Input: \"aaj weather bahut achha hai main office ja raha hoon\"
-  Output: \"आज वेदर बहुत अच्छा है मैं ऑफिस जा रहा हूँ\"
+  Output: \"आज weather बहुत अच्छा है मैं office जा रहा हूँ\"
 - Input: \"hello team aaj ki meeting ka agenda kya hai\"
-  Output: \"hello team आज की मीटिंग का एजेंडा क्या है\"
+  Output: \"hello team आज की meeting का agenda क्या है\"
 - Input: \"I will call you later, main abhi busy hoon\"
-  Output: \"I will call you later, मैं अभी बिजी हूँ\""
+  Output: \"I will call you later, मैं अभी busy हूँ\""
     } else {
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
 CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
 1. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep non-English words in their native language.
-2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters).
+2. NATIVE SCRIPT: Write all non-English words in their respective native script (e.g., Spanish words in Spanish/Latin script, Chinese in Chinese characters, Hindi in Devanagari script).
 3. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). Do NOT translate English words to the target language.
 4. MIXED LANGUAGE HANDLING: For code-mixed text, keep each word/phrase in its native script.
 5. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
@@ -653,7 +655,10 @@ pub async fn transcribe_local_sherpa(
     })?;
 
     // 2. Check if numpy and sherpa-onnx are installed and fully functional
-    let check_status = tokio::process::Command::new(python_cmd)
+    let mut check_cmd = tokio::process::Command::new(python_cmd);
+    #[cfg(windows)]
+    check_cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    let check_status = check_cmd
         .args(["-c", "import numpy, sherpa_onnx; sherpa_onnx.OfflineTransducerModelConfig"])
         .output()
         .await;
@@ -668,7 +673,10 @@ pub async fn transcribe_local_sherpa(
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
         emit_status(app_handle, "Installing dependencies...");
         
-        let install_status = tokio::process::Command::new(python_cmd)
+        let mut install_cmd = tokio::process::Command::new(python_cmd);
+        #[cfg(windows)]
+        install_cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        let install_status = install_cmd
             .args(["-m", "pip", "install", "--user", "numpy", "sherpa-onnx"])
             .output()
             .await
@@ -701,6 +709,8 @@ pub async fn transcribe_local_sherpa(
 
     // 4. Run python script
     let mut command = tokio::process::Command::new(python_cmd);
+    #[cfg(windows)]
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
     command
         .arg(&script_path_str)
         .arg("--wav_path")
@@ -739,8 +749,16 @@ pub async fn transcribe_local_sherpa(
 }
 
 fn find_python_cmd() -> Option<&'static str> {
+    #[cfg(windows)]
+    use std::os::windows::process::CommandExt;
     for cmd in &["python", "python3", "py"] {
-        if let Ok(output) = std::process::Command::new(cmd).arg("--version").output() {
+        let result = {
+            let mut c = std::process::Command::new(cmd);
+            #[cfg(windows)]
+            c.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            c.arg("--version").output()
+        };
+        if let Ok(output) = result {
             if output.status.success() {
                 return Some(cmd);
             }
