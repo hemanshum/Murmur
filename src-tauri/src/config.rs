@@ -56,6 +56,8 @@ pub struct AppConfig {
     pub onboarding_complete: bool,
     #[serde(default = "default_local_llm_thinking")]
     pub local_llm_thinking: bool,
+    #[serde(default = "default_preferred_languages")]
+    pub preferred_languages: Vec<String>,
 }
 
 fn default_transcribe_key() -> String {
@@ -76,6 +78,32 @@ fn default_onboarding_complete() -> bool {
 
 fn default_local_llm_thinking() -> bool {
     false
+}
+
+fn default_preferred_languages() -> Vec<String> {
+    vec![
+        "auto".to_string(),
+        "en".to_string(),
+        "hi".to_string(),
+        "bn".to_string(),
+        "te".to_string(),
+        "mr".to_string(),
+        "ta".to_string(),
+        "gu".to_string(),
+        "kn".to_string(),
+        "ml".to_string(),
+        "pa".to_string(),
+        "or".to_string(),
+        "es".to_string(),
+        "fr".to_string(),
+        "de".to_string(),
+        "it".to_string(),
+        "pt".to_string(),
+        "zh".to_string(),
+        "ja".to_string(),
+        "ko".to_string(),
+        "ru".to_string(),
+    ]
 }
 
 fn default_model() -> String {
@@ -183,6 +211,7 @@ impl AppConfig {
             local_refine_model: "qwen3_0_6b".to_string(),
             onboarding_complete: false,
             local_llm_thinking: false,
+            preferred_languages: default_preferred_languages(),
         }
     }
 

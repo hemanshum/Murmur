@@ -13,6 +13,15 @@ fn get_language_name(code: &str) -> &str {
     match code {
         "en" => "English",
         "hi" => "Hindi",
+        "bn" => "Bengali",
+        "te" => "Telugu",
+        "mr" => "Marathi",
+        "ta" => "Tamil",
+        "gu" => "Gujarati",
+        "kn" => "Kannada",
+        "ml" => "Malayalam",
+        "pa" => "Punjabi",
+        "or" => "Odia",
         "es" => "Spanish",
         "fr" => "French",
         "de" => "German",
@@ -60,16 +69,15 @@ CRITICAL LANGUAGE RULES:
         "You are a professional voice dictation assistant. Your task is to transcribe the audio and clean it up. \
 Keep all original meaning but remove filler words (like 'um', 'uh', 'like'), correct backtracking, and format it into clean text.
 
-CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
+CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
 1. FILTER BACKGROUND NOISE: Ignore any ambient noise, background chatter, crosstalk, or non-speech sounds. Do not transcribe them.
-2. DO NOT TRANSLATE: Absolutely DO NOT translate any spoken words to English or any other language. Transcribe exactly the words spoken in their native language.
-3. HINDI IN DEVANAGARI: If the speaker speaks in Hindi (or a mix of Hindi and English), you MUST write all Hindi words/phrases in Devanagari script.
-4. ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). For example, 'software engineer', 'developer', 'meeting', 'call you later' must remain in English script. Do NOT translate English words to Hindi.
-5. MIXED LANGUAGE (HINGLISH) HANDLING: For code-mixed speech (mixing Hindi and English), write each word/phrase in its respective native script (e.g., Hindi in Devanagari script, English in English script).
+2. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Transcribe exactly the words spoken in their native language.
+3. SCRIPT MIX FOR HINGLISH: Keep Hindi words in Devanagari script (Hindi) and English words in English/Latin script (e.g., 'meeting', 'software engineer', 'agenda'). Do NOT transliterate English words to Devanagari, and do NOT transliterate Hindi words to Latin script.
    - Example Spoken: \"Mera naam Hemanshu hai and I am a software engineer\"
    - Expected Output: \"मेरा नाम हिमांशु है and I am a software engineer\"
-   - (DO NOT output: \"My name is Hemanshu and I am a software engineer\")
-6. NO META-TEXT: Do not add any conversational responses, notes, explanations, prefix, or suffix. Return ONLY the transcribed and cleaned text."
+   - Example Spoken: \"hello team aaj ki meeting ka agenda kya hai\"
+   - Expected Output: \"hello team आज की meeting का agenda क्या है\"
+4. NO META-TEXT: Do not add any conversational responses, notes, explanations, prefix, or suffix. Return ONLY the transcribed and cleaned text."
     } else {
         "You are a professional voice dictation assistant. Your task is to transcribe the audio and clean it up. \
 Keep all original meaning but remove filler words (like 'um', 'uh', 'like'), correct backtracking, and format it into clean text.
@@ -86,7 +94,7 @@ CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
     let lang_instruction = if language_name == "English" {
         "IMPORTANT: The audio is spoken in English. You must transcribe everything strictly in English. Do NOT use any Hindi words, Devanagari script, Romanized Hindi, or non-English script. Translate or correct any non-English words to clean English.".to_string()
     } else if language_name == "Hindi" {
-        " IMPORTANT SCRIPT & TRANSLATION RULES: The audio is in Hindi (or Hinglish, a mix of Hindi and English). You MUST transcribe Hindi words in Devanagari script (e.g. 'मेरा', 'नाम', 'है', 'कैसे', 'हो') and English words in English/Latin script. Absolutely DO NOT translate Hindi words to English (e.g. do NOT transcribe 'मेरा नाम' as 'My name').".to_string()
+        " IMPORTANT SCRIPT & TRANSLATION RULES: The audio is in Hindi (or Hinglish, a mix of Hindi and English). Write Hindi words in Devanagari script and English words in English/Latin script. Absolutely DO NOT transliterate English words to Devanagari (e.g. write 'meeting' as 'meeting', NOT 'मीटिंग'). Absolutely DO NOT translate Hindi words to English (e.g. write 'मेरा नाम' if the speaker said 'Mera naam').".to_string()
     } else if language_name != "Auto-detect" {
         format!(" IMPORTANT: The audio is spoken in {} (or a mix of {} and English). You must transcribe exactly what is spoken in that same language mix. Write {} words in native script and English words in English script. Do NOT translate non-English words to English.", language_name, language_name, language_name)
     } else {
@@ -183,14 +191,12 @@ CRITICAL LANGUAGE RULES:
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
-CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
+CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
 1. FILTER BACKGROUND NOISE: Ignore and remove any words or phrases that represent ambient noise, background chatter, crosstalk, or non-speech sounds. Do not include them in the refined text.
-2. DETECT HINDI WORDS: Identify all Hindi words and phrases, even if they are written in Roman/Latin script (Hinglish / transliterated script, e.g., 'mera', 'naam', 'hai', 'kaise', 'ho', 'main', 'aur').
-3. WRITE HINDI IN DEVANAGARI: You MUST convert all Hindi words/phrases to Devanagari script (e.g., convert 'mera' to 'मेरा', 'naam' to 'नाम', 'hai' to 'है', 'kaise' to 'कैसे', 'ho' to 'हो').
-4. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). For example, 'software engineer', 'developer', 'meeting', 'call you later' must remain in English script. Do NOT translate English words to Hindi.
-5. STRICTLY PROHIBIT TRANSLATION: Do NOT translate Hindi words to English (e.g., do NOT translate 'mera naam' or 'मेरा नाम' to 'my name'). Keep them in their original language, but written in Devanagari script.
-6. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
-7. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text.
+2. SCRIPT MIX FOR HINGLISH: Write/convert Hindi words to Devanagari script (Hindi) and English words in English/Latin script (e.g., 'meeting', 'software engineer', 'agenda'). Do NOT transliterate English words to Devanagari, and do NOT transliterate Hindi words to Latin script.
+3. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep Hindi words in Hindi and English words in English.
+4. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+5. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text.
 
 EXAMPLES:
 - Input: \"mera naam hemanshu hai and I am a software engineer\"
@@ -218,7 +224,7 @@ CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
     let lang_instruction = if language_name == "English" {
         "IMPORTANT: The text is in English. You must refine it strictly in English. Do NOT use any Hindi words, Devanagari script, Romanized Hindi, or non-English script. Translate or correct any non-English words to clean English.".to_string()
     } else if language_name == "Hindi" {
-        " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text in that same language mix. Write all Hindi words in Devanagari script (e.g. convert Romanized 'mera naam', 'kaise ho' to 'मेरा नाम', 'कैसे हो') and keep English words in English/Latin script. Absolutely DO NOT translate Hindi words to English (e.g. do NOT convert 'मेरा नाम' or 'mera naam' to 'My name').".to_string()
+        " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text. Write Hindi words in Devanagari script and English words in English/Latin script. Do NOT transliterate English words to Devanagari (e.g. write 'meeting' as 'meeting', NOT 'मीटिंग'). Absolutely DO NOT translate Hindi words to English.".to_string()
     } else if language_name != "Auto-detect" {
         format!(" IMPORTANT: The text is in {} (or a mix of {} and English). You must refine and clean up the text in that same language mix. Keep {} words in their native script and English words in English script. Do NOT translate non-English words to English.", language_name, language_name, language_name)
     } else {
@@ -420,14 +426,12 @@ CRITICAL LANGUAGE RULES:
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
-CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
+CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
 1. FILTER BACKGROUND NOISE: Ignore and remove any words or phrases that represent ambient noise, background chatter, crosstalk, or non-speech sounds. Do not include them in the refined text.
-2. DETECT HINDI WORDS: Identify all Hindi words and phrases, even if they are written in Roman/Latin script (Hinglish / transliterated script, e.g., 'mera', 'naam', 'hai', 'kaise', 'ho', 'main', 'aur').
-3. WRITE HINDI IN DEVANAGARI: You MUST convert all Hindi words/phrases to Devanagari script (e.g., convert 'mera' to 'मेरा', 'naam' to 'नाम', 'hai' to 'है', 'kaise' to 'कैसे', 'ho' to 'हो').
-4. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). For example, 'software engineer', 'developer', 'meeting', 'call you later' must remain in English script. Do NOT translate English words to Hindi.
-5. STRICTLY PROHIBIT TRANSLATION: Do NOT translate Hindi words to English (e.g., do NOT translate 'mera naam' or 'मेरा नाम' to 'my name'). Keep them in their original language, but written in Devanagari script.
-6. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
-7. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text.
+2. SCRIPT MIX FOR HINGLISH: Write/convert Hindi words to Devanagari script (Hindi) and English words in English/Latin script (e.g., 'meeting', 'software engineer', 'agenda'). Do NOT transliterate English words to Devanagari, and do NOT transliterate Hindi words to Latin script.
+3. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep Hindi words in Hindi and English words in English.
+4. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+5. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text.
 
 EXAMPLES:
 - Input: \"mera naam hemanshu hai and I am a software engineer\"
@@ -455,7 +459,7 @@ CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
     let lang_instruction = if language_name == "English" {
         "IMPORTANT: The text is in English. You must refine it strictly in English. Do NOT use any Hindi words, Devanagari script, Romanized Hindi, or non-English script. Translate or correct any non-English words to clean English.".to_string()
     } else if language_name == "Hindi" {
-        " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text in that same language mix. Write all Hindi words in Devanagari script (e.g. convert Romanized 'mera naam', 'kaise ho' to 'मेरा नाम', 'कैसे हो') and keep English words in English/Latin script. Absolutely DO NOT translate Hindi words to English (e.g. do NOT convert 'मेरा नाम' or 'mera naam' to 'My name').".to_string()
+        " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text. Write Hindi words in Devanagari script and English words in English/Latin script. Do NOT transliterate English words to Devanagari (e.g. write 'meeting' as 'meeting', NOT 'मीटिंग'). Absolutely DO NOT translate Hindi words to English.".to_string()
     } else if language_name != "Auto-detect" {
         format!(" IMPORTANT: The text is in {} (or a mix of {} and English). You must refine and clean up the text in that same language mix. Keep {} words in their native script and English words in English script. Do NOT translate non-English words to English.", language_name, language_name, language_name)
     } else {
@@ -622,14 +626,12 @@ CRITICAL LANGUAGE RULES:
         "You are a professional voice dictation assistant. Your task is to refine and clean up the raw transcription. \
 You must carefully process the text to ensure the correct script and language are preserved.
 
-CRITICAL TRANSLITERATION, SCRIPT & TRANSLATION PRESERVATION RULES:
+CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
 1. FILTER BACKGROUND NOISE: Ignore and remove any words or phrases that represent ambient noise, background chatter, crosstalk, or non-speech sounds. Do not include them in the refined text.
-2. DETECT HINDI WORDS: Identify all Hindi words and phrases, even if they are written in Roman/Latin script (Hinglish / transliterated script, e.g., 'mera', 'naam', 'hai', 'kaise', 'ho', 'main', 'aur').
-3. WRITE HINDI IN DEVANAGARI: You MUST convert all Hindi words/phrases to Devanagari script (e.g., convert 'mera' to 'मेरा', 'naam' to 'नाम', 'hai' to 'है', 'kaise' to 'कैसे', 'ho' to 'हो').
-4. KEEP ENGLISH IN ENGLISH SCRIPT: Keep all English words and phrases in English (Latin script). For example, 'software engineer', 'developer', 'meeting', 'call you later' must remain in English script. Do NOT translate English words to Hindi.
-5. STRICTLY PROHIBIT TRANSLATION: Do NOT translate Hindi words to English (e.g., do NOT translate 'mera naam' or 'मेरा नाम' to 'my name'). Keep them in their original language, but written in Devanagari script.
-6. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
-7. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text.
+2. SCRIPT MIX FOR HINGLISH: Write/convert Hindi words to Devanagari script (Hindi) and English words in English/Latin script (e.g., 'meeting', 'software engineer', 'agenda'). Do NOT transliterate English words to Devanagari, and do NOT transliterate Hindi words to Latin script.
+3. DO NOT TRANSLATE: Absolutely DO NOT translate non-English words to English. Keep Hindi words in Hindi and English words in English.
+4. REMOVE FILLER WORDS: Remove filler words (like 'um', 'uh', 'like', 'ah'), correct backtracking, and format into clean, readable text.
+5. NO META-TEXT: Do not add any conversational responses, explanations, note, prefix, or suffix. Return ONLY the finalized refined text.
 
 EXAMPLES:
 - Input: \"mera naam hemanshu hai and I am a software engineer\"
@@ -657,7 +659,7 @@ CRITICAL SCRIPT & TRANSLATION PRESERVATION RULES:
     let lang_instruction = if language_name == "English" {
         "IMPORTANT: The text is in English. You must refine it strictly in English. Do NOT use any Hindi words, Devanagari script, Romanized Hindi, or non-English script. Translate or correct any non-English words to clean English.".to_string()
     } else if language_name == "Hindi" {
-        " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text in that same language mix. Write all Hindi words in Devanagari script (e.g. convert Romanized 'mera naam', 'kaise ho' to 'मेरा नाम', 'कैसे हो') and keep English words in English/Latin script. Absolutely DO NOT translate Hindi words to English (e.g. do NOT convert 'मेरा नाम' or 'mera naam' to 'My name').".to_string()
+        " IMPORTANT SCRIPT & TRANSLATION RULES: The text is in Hindi (or Hinglish, a mix of Hindi and English). You MUST refine and clean up the text. Write Hindi words in Devanagari script and English words in English/Latin script. Do NOT transliterate English words to Devanagari (e.g. write 'meeting' as 'meeting', NOT 'मीटिंग'). Absolutely DO NOT translate Hindi words to English.".to_string()
     } else if language_name != "Auto-detect" {
         format!(" IMPORTANT: The text is in {} (or a mix of {} and English). You must refine and clean up the text in that same language mix. Keep {} words in their native script and English words in English script. Do NOT translate non-English words to English.", language_name, language_name, language_name)
     } else {
@@ -800,7 +802,8 @@ pub async fn transcribe_local_sherpa(
         .arg("--model_dir")
         .arg(&model_dir_str)
         .arg("--language")
-        .arg(language);
+        .arg(language)
+        .env("PYTHONIOENCODING", "utf-8");
 
     let output = command
         .output()
@@ -907,8 +910,7 @@ pub async fn refine_with_local_llm(
     } else if language_name == "Hindi" {
         "You are an expert editor. Rewrite the transcript to be clear, clean, and grammatically correct. \
          Remove all filler words (uh, um, ah, like) and backtracking. \
-         Convert all Hindi words written in Roman script to Devanagari script. \
-         Keep all English words in Latin script. Do not translate Hindi to English or English to Hindi. \
+         Keep Hindi words in Devanagari script and English words in English/Latin script. Do not use Devanagari script for English words. Do not translate. \
          Never reply with chat greetings, explanations, or notes. Return only the cleaned text."
             .to_string()
     } else {
@@ -921,31 +923,55 @@ pub async fn refine_with_local_llm(
         )
     };
 
-    let user_prompt = if prompt.is_empty() {
-        format!(
-            "Clean up this text. Remove all filler words (like \"um\", \"uh\", \"ah\"), fix repetitions, and correct grammar and punctuation. Do not add any extra text or quotes around the response. Return only the cleaned text.\n\nText: \"{}\"",
-            raw_text
-        )
+    let user_prompt = if language_name == "Hindi" {
+        if prompt.is_empty() {
+            format!(
+                "Clean up this text. Remove all filler words (like \"um\", \"uh\", \"ah\"), fix repetitions, and correct grammar and punctuation. Keep Hindi words in Devanagari script and English words in English/Latin script. Do not translate. Return only the cleaned text.\n\nText: \"{}\"",
+                raw_text
+            )
+        } else {
+            format!(
+                "Clean up this text. Remove all filler words (like \"um\", \"uh\", \"ah\"), fix repetitions, and correct grammar and punctuation. Keep Hindi words in Devanagari script and English words in English/Latin script. Do not translate. Return only the cleaned text.\n\nUser Instruction: {}\n\nText: \"{}\"",
+                prompt,
+                raw_text
+            )
+        }
     } else {
-        format!(
-            "Clean up this text. Remove all filler words (like \"um\", \"uh\", \"ah\"), fix repetitions, and correct grammar and punctuation. Do not add any extra text or quotes around the response. Return only the cleaned text.\n\nUser Instruction: {}\n\nText: \"{}\"",
-            prompt,
-            raw_text
-        )
+        if prompt.is_empty() {
+            format!(
+                "Clean up this text. Remove all filler words (like \"um\", \"uh\", \"ah\"), fix repetitions, and correct grammar and punctuation. Do not add any extra text or quotes around the response. Return only the cleaned text.\n\nText: \"{}\"",
+                raw_text
+            )
+        } else {
+            format!(
+                "Clean up this text. Remove all filler words (like \"um\", \"uh\", \"ah\"), fix repetitions, and correct grammar and punctuation. Do not add any extra text or quotes around the response. Return only the cleaned text.\n\nUser Instruction: {}\n\nText: \"{}\"",
+                prompt,
+                raw_text
+            )
+        }
     };
 
     // 4. Run llama-cli in chat/conversation mode (which formats prompt with model's native template)
-    // -sys/--system-prompt  = sets the system prompt
-    // -p/--prompt           = sets the user input
-    // -st/--single-turn     = run for one turn then exit immediately (prevents interactive hang)
-    // --no-display-prompt   = do not echo the prompt to stdout (leaves only generated response)
+    // We write prompt to temporary files and pass them via file flags to avoid Windows command-line argument encoding issues (UTF-16 to ANSI conversion replacing Unicode characters with "?")
+    let system_prompt_file = config_dir.join("system_prompt_tmp.txt");
+    let user_prompt_file = config_dir.join("user_prompt_tmp.txt");
+
+    fs::write(&system_prompt_file, &system_prompt)
+        .map_err(|e| format!("Failed to write temporary system prompt file: {}", e))?;
+    fs::write(&user_prompt_file, &user_prompt)
+        .map_err(|e| format!("Failed to write temporary user prompt file: {}", e))?;
+
+    let system_prompt_file_str = system_prompt_file.to_string_lossy().to_string();
+    let user_prompt_file_str = user_prompt_file.to_string_lossy().to_string();
+
     let mut command = tokio::process::Command::new(&llama_cli);
     #[cfg(windows)]
     command.creation_flags(0x08000000);
     command
         .arg("--model").arg(&model_path_str)
-        .arg("-sys").arg(&system_prompt)
-        .arg("-p").arg(&user_prompt)
+        .arg("--jinja")
+        .arg("-sysf").arg(&system_prompt_file_str)
+        .arg("-f").arg(&user_prompt_file_str)
         .arg("--n-predict").arg("1024")
         .arg("--ctx-size").arg("4096")
         .arg("--temp").arg("0.2")
@@ -959,13 +985,19 @@ pub async fn refine_with_local_llm(
         command.arg("--reasoning-budget").arg("0");
     }
 
-    let output = tokio::time::timeout(
+    let output_result = tokio::time::timeout(
         std::time::Duration::from_secs(120),
         command.output(),
     )
-    .await
-    .map_err(|_| "llama-cli timed out after 120s".to_string())?
-    .map_err(|e| format!("Failed to run llama-cli: {}", e))?;
+    .await;
+
+    // Clean up temporary files
+    let _ = fs::remove_file(system_prompt_file);
+    let _ = fs::remove_file(user_prompt_file);
+
+    let output = output_result
+        .map_err(|_| "llama-cli timed out after 120s".to_string())?
+        .map_err(|e| format!("Failed to run llama-cli: {}", e))?;
 
     let stdout_raw = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr_raw = String::from_utf8_lossy(&output.stderr).to_string();

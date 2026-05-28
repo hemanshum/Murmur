@@ -202,7 +202,7 @@ def main():
         recognizer.decode_stream(stream)
         
         result_text = stream.result.text
-        print(json.dumps({"text": result_text}))
+        print(json.dumps({"text": result_text}, ensure_ascii=False))
 
     except Exception as e:
         print(json.dumps({"error": f"Error running recognition: {str(e)}"}))

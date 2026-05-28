@@ -241,38 +241,28 @@ fn stop_recording_internal(app_handle: &AppHandle, state: &AppState) -> Result<(
 
         let result = match tx_provider.as_str() {
             "local_whisper" | "local_parakeet" => {
-                let model_id = if tx_provider == "local_parakeet" {
-                    "parakeet_v3".to_string()
+                if tx_provider == "local_parakeet" && transcription_language != "en" {
+                    Err("Nvidia Parakeet is an English-only model. For Hindi, please select a Whisper model or Gemini in Settings > AI Settings.".to_string())
                 } else {
-                    format!("whisper_{}", local_whisper_model)
-                };
-                
-                let model_type = if tx_provider == "local_parakeet" {
-                    "parakeet"
-                } else {
-                    "whisper"
-                };
+                    let model_id = if tx_provider == "local_parakeet" {
+                        "parakeet_v3".to_string()
+                    } else {
+                        format!("whisper_{}", local_whisper_model)
+                    };
+                    
+                    let model_type = if tx_provider == "local_parakeet" {
+                        "parakeet"
+                    } else {
+                        "whisper"
+                    };
 
-                let is_downloaded = crate::downloader::check_model_downloaded(app_handle_clone.clone(), model_id.clone());
-                if is_downloaded {
-                    match crate::api::transcribe_local_sherpa(
-                        &app_handle_clone,
-                        &temp_file_str,
-                        model_type,
-                        &model_id,
-                        &transcription_language,
-                    ).await {
-                        Ok(raw_text) => {
-                            refine_text_internal(&app_handle_clone, &raw_text, &api_config).await
-                        }
-                        Err(e) => Err(e),
-                    }
-                } else {
-                    if tx_provider == "local_whisper" {
-                        // Fall back to legacy local_whisper CLI logic if it's whisper
-                        match crate::api::transcribe_local_whisper(
+                    let is_downloaded = crate::downloader::check_model_downloaded(app_handle_clone.clone(), model_id.clone());
+                    if is_downloaded {
+                        match crate::api::transcribe_local_sherpa(
+                            &app_handle_clone,
                             &temp_file_str,
-                            &local_whisper_model,
+                            model_type,
+                            &model_id,
                             &transcription_language,
                         ).await {
                             Ok(raw_text) => {
@@ -281,7 +271,21 @@ fn stop_recording_internal(app_handle: &AppHandle, state: &AppState) -> Result<(
                             Err(e) => Err(e),
                         }
                     } else {
-                        Err("Model files are not downloaded. Please download the Nvidia Parakeet model in Settings.".to_string())
+                        if tx_provider == "local_whisper" {
+                            // Fall back to legacy local_whisper CLI logic if it's whisper
+                            match crate::api::transcribe_local_whisper(
+                                &temp_file_str,
+                                &local_whisper_model,
+                                &transcription_language,
+                            ).await {
+                                Ok(raw_text) => {
+                                    refine_text_internal(&app_handle_clone, &raw_text, &api_config).await
+                                }
+                                Err(e) => Err(e),
+                            }
+                        } else {
+                            Err("Model files are not downloaded. Please download the Nvidia Parakeet model in Settings.".to_string())
+                        }
                     }
                 }
             }
@@ -357,7 +361,8 @@ fn stop_recording_internal(app_handle: &AppHandle, state: &AppState) -> Result<(
         }
 
         match result {
-            Ok(transcribed_text) => {
+            Ok(mut transcribed_text) => {
+                transcribed_text = sanitize_transcription(&transcribed_text);
                 if transcribed_text.is_empty() {
                     update_status(&app_handle_clone, &app_state, "Idle");
                     return;
@@ -437,7 +442,8 @@ async fn refine_text_internal(
     raw_text: &str,
     config: &AppConfig,
 ) -> Result<String, String> {
-    if raw_text.is_empty() {
+    let sanitized_raw = sanitize_transcription(raw_text);
+    if sanitized_raw.is_empty() {
         return Ok("".to_string());
     }
 
@@ -447,7 +453,7 @@ async fn refine_text_internal(
                 &config.ollama_url,
                 &config.ollama_model,
                 &config.prompt,
-                raw_text,
+                &sanitized_raw,
                 &config.transcription_language,
             ).await
         }
@@ -456,7 +462,7 @@ async fn refine_text_internal(
                 &config.api_key,
                 &config.model,
                 &config.prompt,
-                raw_text,
+                &sanitized_raw,
                 &config.transcription_language,
             ).await
         }
@@ -466,7 +472,7 @@ async fn refine_text_internal(
                 &config.openai_api_key,
                 &config.openai_refine_model,
                 &config.prompt,
-                raw_text,
+                &sanitized_raw,
                 &config.transcription_language,
             ).await
         }
@@ -476,7 +482,7 @@ async fn refine_text_internal(
                 &config.openrouter_api_key,
                 &config.openrouter_model,
                 &config.prompt,
-                raw_text,
+                &sanitized_raw,
                 &config.transcription_language,
             ).await
         }
@@ -486,7 +492,7 @@ async fn refine_text_internal(
                 &config.custom_api_key,
                 &config.custom_api_model,
                 &config.prompt,
-                raw_text,
+                &sanitized_raw,
                 &config.transcription_language,
             ).await
         }
@@ -496,7 +502,7 @@ async fn refine_text_internal(
                 "",
                 &config.lm_studio_model,
                 &config.prompt,
-                raw_text,
+                &sanitized_raw,
                 &config.transcription_language,
             ).await
         }
@@ -505,12 +511,12 @@ async fn refine_text_internal(
                 app_handle,
                 &config.local_refine_model,
                 &config.prompt,
-                raw_text,
+                &sanitized_raw,
                 &config.transcription_language,
                 config.local_llm_thinking,
             ).await
         }
-        _ => Ok(raw_text.to_string()),
+        _ => Ok(sanitized_raw),
     }
 }
 
@@ -708,3 +714,120 @@ fn complete_onboarding(app_handle: AppHandle) -> Result<(), String> {
     config.onboarding_complete = true;
     config.save(&app_handle)
 }
+
+fn sanitize_transcription(text: &str) -> String {
+    let mut cleaned = text.to_string();
+    cleaned = remove_consecutive_repeating_phrases(&cleaned, 1);
+    cleaned = remove_consecutive_repeating_phrases(&cleaned, 2);
+    cleaned = remove_consecutive_repeating_phrases(&cleaned, 3);
+    cleaned
+}
+
+fn normalize_word(w: &str) -> String {
+    let mut s = String::new();
+    for c in w.chars() {
+        if !c.is_ascii_punctuation() 
+            && c != '।' 
+            && c != '؟' 
+            && c != '—' 
+            && c != '…' 
+            && c != '“' 
+            && c != '”' 
+            && c != '‘' 
+            && c != '’' 
+        {
+            s.extend(c.to_lowercase());
+        }
+    }
+    
+    if s == "हां" || s == "हाँ" || s == "हं" || s == "हँ" || s == "हॉं" || s == "हॉँ" ||
+       s == "ہاں" || s == "ھاں" || s == "ہں" || s == "ھں" ||
+       s == "haan" || s == "han" || s == "hãn" || s == "hã" {
+        return "haan".to_string();
+    }
+    s
+}
+
+fn remove_consecutive_repeating_phrases(text: &str, phrase_len: usize) -> String {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    if words.len() < phrase_len * 3 {
+        return text.to_string();
+    }
+    
+    let mut result = Vec::new();
+    let mut i = 0;
+    
+    while i < words.len() {
+        if i + phrase_len <= words.len() {
+            let chunk = &words[i..i+phrase_len];
+            let norm_chunk: Vec<String> = chunk.iter().map(|w| normalize_word(w)).collect();
+            
+            let mut count = 1;
+            while i + (count + 1) * phrase_len <= words.len() {
+                let next_chunk = &words[i + count * phrase_len .. i + (count + 1) * phrase_len];
+                let norm_next: Vec<String> = next_chunk.iter().map(|w| normalize_word(w)).collect();
+                if norm_chunk == norm_next {
+                    count += 1;
+                } else {
+                    break;
+                }
+            }
+            
+            if count >= 3 {
+                let occurrences_to_keep = if phrase_len == 1 { 2 } else { 1 };
+                for _ in 0..occurrences_to_keep {
+                    for w in chunk {
+                        result.push(*w);
+                    }
+                }
+                i += count * phrase_len;
+            } else {
+                result.push(words[i]);
+                i += 1;
+            }
+        } else {
+            result.push(words[i]);
+            i += 1;
+        }
+    }
+    
+    result.join(" ")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_word() {
+        assert_eq!(normalize_word("हां"), "haan");
+        assert_eq!(normalize_word("हाँ"), "haan");
+        assert_eq!(normalize_word("ہاں"), "haan");
+        assert_eq!(normalize_word("ھاں"), "haan");
+        assert_eq!(normalize_word("haan"), "haan");
+        assert_eq!(normalize_word("hello!"), "hello");
+        assert_eq!(normalize_word("।"), "");
+    }
+
+    #[test]
+    fn test_sanitize_transcription() {
+        // 1. Single word repetition (Urdu/Hindi 'haan') - should collapse to 2 occurrences
+        let input = "हां हां हां हां हां हां जी";
+        assert_eq!(sanitize_transcription(input), "हां हां जी");
+
+        let input_mixed = "ھاں हां ہاں हां हां हां ठीक है";
+        assert_eq!(sanitize_transcription(input_mixed), "ھاں ھاں ठीक है");
+
+        // 2. Hindi grammatical reduplication (exactly 2 repeats) - should NOT collapse
+        let input_redup = "धीरे धीरे चलें";
+        assert_eq!(sanitize_transcription(input_redup), "धीरे धीरे चलें");
+
+        // 3. Multi-word phrases (e.g. thank you) - should collapse to 1 occurrence
+        let input_phrase = "thank you thank you thank you";
+        assert_eq!(sanitize_transcription(input_phrase), "thank you");
+
+        let input_phrase_3 = "welcome to the welcome to the welcome to the and hello";
+        assert_eq!(sanitize_transcription(input_phrase_3), "welcome to the and hello");
+    }
+}
+

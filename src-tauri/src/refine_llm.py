@@ -68,7 +68,7 @@ def main():
             import re
             result_text = re.sub(r"<think>.*?</think>", "", result_text, flags=re.DOTALL).strip()
 
-        print(json.dumps({"result": result_text.strip()}))
+        print(json.dumps({"result": result_text.strip()}, ensure_ascii=False))
 
     except Exception as e:
         print(json.dumps({"error": f"LLM inference failed: {str(e)}"}))

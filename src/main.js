@@ -119,6 +119,129 @@ const textRefineDownloadStatus = document.getElementById("refine-download-status
 const textRefineDownloadPercent = document.getElementById("refine-download-percent");
 const barRefineDownloadProgress = document.getElementById("refine-download-bar");
 
+const ALL_LANGUAGES = {
+  "auto": "Auto-detect Language",
+  "en": "English",
+  "hi": "Hindi",
+  "bn": "Bengali",
+  "te": "Telugu",
+  "mr": "Marathi",
+  "ta": "Tamil",
+  "gu": "Gujarati",
+  "kn": "Kannada",
+  "ml": "Malayalam",
+  "pa": "Punjabi",
+  "or": "Odia",
+  "es": "Spanish",
+  "fr": "French",
+  "de": "German",
+  "it": "Italian",
+  "pt": "Portuguese",
+  "zh": "Chinese",
+  "ja": "Japanese",
+  "ko": "Korean",
+  "ru": "Russian"
+};
+
+function getPreferredLanguagesFromUI() {
+  const checkboxes = document.querySelectorAll(".preferred-languages-grid input[type='checkbox']");
+  const list = [];
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      list.push(cb.value);
+    }
+  });
+  if (!list.includes("en")) {
+    list.push("en");
+  }
+  return list;
+}
+
+function renderPreferredLanguagesGrid(preferredList) {
+  const grid = document.getElementById("preferred-languages-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  
+  for (const [code, name] of Object.entries(ALL_LANGUAGES)) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "lang-checkbox-wrapper";
+    
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = `pref-lang-${code}`;
+    checkbox.value = code;
+    checkbox.checked = preferredList.includes(code);
+    
+    if (code === "en") {
+      checkbox.disabled = true;
+      checkbox.checked = true;
+    }
+    
+    const label = document.createElement("label");
+    label.htmlFor = `pref-lang-${code}`;
+    label.textContent = name;
+    
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(label);
+    grid.appendChild(wrapper);
+    
+    checkbox.addEventListener("change", async () => {
+      const currentList = getPreferredLanguagesFromUI();
+      populateLanguageDropdowns(currentList, selectTranscriptionProvider.value);
+      await autoSaveConfig();
+    });
+  }
+}
+
+function populateLanguageDropdowns(preferredList, activeProvider) {
+  const isOffline = (activeProvider === "local_parakeet" || activeProvider === "local_whisper");
+  
+  const currentDashVal = dashboardLanguageSelect ? dashboardLanguageSelect.value : "en";
+  const currentSettingsVal = selectTranscriptionLanguage ? selectTranscriptionLanguage.value : "en";
+  
+  if (dashboardLanguageSelect) dashboardLanguageSelect.innerHTML = "";
+  if (selectTranscriptionLanguage) selectTranscriptionLanguage.innerHTML = "";
+  
+  if (isOffline) {
+    if (dashboardLanguageSelect) {
+      dashboardLanguageSelect.add(new Option("English", "en"));
+      dashboardLanguageSelect.value = "en";
+    }
+    if (selectTranscriptionLanguage) {
+      selectTranscriptionLanguage.add(new Option("English", "en"));
+      selectTranscriptionLanguage.value = "en";
+    }
+  } else {
+    preferredList.forEach(code => {
+      const name = ALL_LANGUAGES[code] || code;
+      if (dashboardLanguageSelect) {
+        dashboardLanguageSelect.add(new Option(name, code));
+      }
+      if (selectTranscriptionLanguage) {
+        selectTranscriptionLanguage.add(new Option(name, code));
+      }
+    });
+    
+    const fallback = preferredList.includes("auto") ? "auto" : "en";
+    
+    if (dashboardLanguageSelect) {
+      if (preferredList.includes(currentDashVal)) {
+        dashboardLanguageSelect.value = currentDashVal;
+      } else {
+        dashboardLanguageSelect.value = fallback;
+      }
+    }
+    
+    if (selectTranscriptionLanguage) {
+      if (preferredList.includes(currentSettingsVal)) {
+        selectTranscriptionLanguage.value = currentSettingsVal;
+      } else {
+        selectTranscriptionLanguage.value = fallback;
+      }
+    }
+  }
+}
+
 // Onboarding Elements
 const onboardingOverlay = document.getElementById("onboarding-overlay");
 const onboardingPlugPlay = document.getElementById("onboarding-plug-play");
@@ -361,86 +484,115 @@ function updatePerformanceAdvisor() {
   // Reset classes
   card.className = "performance-advisor";
 
-  // 1. Cloud-to-Cloud (Blazing Fast)
-  if ((transProvider === "gemini" || transProvider === "openai") && refProvider === "none") {
+  // Helper variables to classify ASR and Refinement providers
+  const isCloudAsr = (transProvider === "gemini" || transProvider === "openai");
+  const isOfflineAsr = (transProvider === "local_parakeet" || transProvider === "local_whisper");
+  const isLmStudioAsr = (transProvider === "lm_studio");
+
+  const isNoRef = (refProvider === "none");
+  const isCloudRef = (refProvider === "gemini" || refProvider === "openai" || refProvider === "openrouter" || refProvider === "custom");
+  const isLocalLlmRef = (refProvider === "local_llm");
+  const isOtherLocalRef = (refProvider === "ollama" || refProvider === "lm_studio");
+
+  // Get display names
+  const transName = transProvider === "gemini" ? "Google Gemini" :
+                    transProvider === "openai" ? "OpenAI Whisper" :
+                    transProvider === "local_parakeet" ? "Nvidia Parakeet V3" :
+                    transProvider === "local_whisper" ? "Local Whisper" :
+                    transProvider === "lm_studio" ? "LM Studio (Local Whisper)" : "Unknown";
+
+  const refName = refProvider === "gemini" ? "Google Gemini" :
+                  refProvider === "openai" ? "OpenAI GPT" :
+                  refProvider === "openrouter" ? "OpenRouter" :
+                  refProvider === "custom" ? "Custom API" :
+                  refProvider === "local_llm" ? "Local LLM (Qwen3)" :
+                  refProvider === "ollama" ? "Ollama" :
+                  refProvider === "lm_studio" ? "LM Studio" : "None";
+
+  // Check combinations and set classes, badge, and description
+  if (isCloudAsr && isNoRef) {
     card.classList.add("speed-blazing");
     icon.textContent = "🚀";
     badge.textContent = "Blazing Fast (~1.5s)";
-    desc.innerHTML = `Using <strong>${transProvider === "gemini" ? "Google Gemini" : "OpenAI Whisper"} (Cloud)</strong> transcription with refinement disabled runs extremely fast. Perfect for quick, near-instant dictation.`;
-  } else if (transProvider === "gemini" && refProvider === "gemini") {
+    desc.innerHTML = `Using <strong>${transName} (Cloud)</strong> transcription with refinement disabled runs extremely fast. Perfect for quick, near-instant dictation.`;
+  } 
+  else if (transProvider === "gemini" && refProvider === "gemini") {
     card.classList.add("speed-blazing");
     icon.textContent = "🚀";
     badge.textContent = "Blazing Fast (~1.5s)";
     desc.innerHTML = `Using <strong>Google Gemini (Cloud)</strong> for both transcription and refinement executes in a single optimized API request. Highly recommended for near-instant responses.`;
   }
-  // 2. Cloud transcription + Cloud refinement (Fast)
-  else if ((transProvider === "gemini" || transProvider === "openai") && 
-             (refProvider === "gemini" || refProvider === "openai" || refProvider === "openrouter" || refProvider === "custom")) {
+  else if (isCloudAsr && isCloudRef) {
     card.classList.add("speed-fast");
     icon.textContent = "⚡";
-    badge.textContent = "Fast (~3.0s)";
-    desc.innerHTML = `Uses cloud-based transcription with <strong>${refProvider === "openai" ? "OpenAI GPT" : refProvider === "openrouter" ? "OpenRouter" : refProvider === "custom" ? "Custom API" : "Google Gemini"}</strong> refinement. Fast and highly accurate refinement with minimal network overhead.`;
+    badge.textContent = "Fast (~2.5-3.5s)";
+    desc.innerHTML = `Uses cloud-based transcription with <strong>${refName} (Cloud)</strong> refinement. Fast and highly accurate refinement with minimal network overhead.`;
   }
-  // 3. Local Parakeet / Local Whisper + No refinement (Moderate)
-  else if ((transProvider === "local_parakeet" || transProvider === "local_whisper") && refProvider === "none") {
-    card.classList.add("speed-moderate");
-    icon.textContent = "📊";
-    badge.textContent = "Moderate (~2.0-4.0s)";
-    desc.innerHTML = `Using <strong>${transProvider === "local_parakeet" ? "Nvidia Parakeet V3" : "Local Whisper"} (Offline)</strong> transcription via the optimized sherpa-onnx engine. Run completely offline and privately on your CPU.`;
-  }
-  // 4. Local Parakeet / Local Whisper + Cloud refinement (Moderate)
-  else if ((transProvider === "local_parakeet" || transProvider === "local_whisper") && 
-             (refProvider === "gemini" || refProvider === "openai" || refProvider === "openrouter" || refProvider === "custom")) {
+  else if (isCloudAsr && isLocalLlmRef) {
     card.classList.add("speed-moderate");
     icon.textContent = "📊";
     badge.textContent = "Moderate (~3.5-6.0s)";
-    desc.innerHTML = `Local offline transcription with <strong>${transProvider === "local_parakeet" ? "Nvidia Parakeet V3" : "Local Whisper"}</strong> combined with cloud refinement. A hybrid setup giving local privacy/speed for audio and high-quality LLM cleanup.`;
+    desc.innerHTML = `Using <strong>${transName} (Cloud)</strong> transcription combined with <strong>Local LLM (Offline)</strong> refinement. Run local Qwen3 cleanup on CPU with privacy for refinement.`;
   }
-  // 5. Cloud transcription + Local Ollama refinement (Slow)
-  else if ((transProvider === "gemini" || transProvider === "openai") && refProvider === "ollama") {
+  else if (isCloudAsr && isOtherLocalRef) {
     card.classList.add("speed-slow");
     icon.textContent = "🐢";
     badge.textContent = "Slow (~10-25s)";
-    desc.innerHTML = `Using a cloud transcription engine but refining with a local <strong>Ollama LLM</strong> is slow due to local generation latency. Consider switching Refinement Provider to Gemini Cloud or None for a significant speedup.`;
+    desc.innerHTML = `Using a cloud transcription engine but refining with a local <strong>${refName} LLM</strong> is slower due to local generation latency. Consider switching Refinement Provider to Gemini Cloud or None for a significant speedup.`;
   }
-  // 6. Local transcription + Local Ollama refinement (Very Slow)
-  else if ((transProvider === "local_parakeet" || transProvider === "local_whisper") && refProvider === "ollama") {
+  else if (isOfflineAsr && isNoRef) {
+    card.classList.add("speed-moderate");
+    icon.textContent = "📊";
+    badge.textContent = "Moderate (~2.0-4.0s)";
+    desc.innerHTML = `Using <strong>${transName} (Offline)</strong> transcription via the optimized sherpa-onnx engine. Run completely offline and privately on your CPU.`;
+  }
+  else if (isOfflineAsr && isCloudRef) {
+    card.classList.add("speed-moderate");
+    icon.textContent = "📊";
+    badge.textContent = "Moderate (~3.5-6.0s)";
+    desc.innerHTML = `Local offline transcription with <strong>${transName}</strong> combined with cloud refinement. A hybrid setup giving local privacy/speed for audio and high-quality LLM cleanup.`;
+  }
+  else if (isOfflineAsr && isLocalLlmRef) {
+    card.classList.add("speed-moderate");
+    icon.textContent = "📊";
+    badge.textContent = "Moderate (~4.0-8.0s)";
+    desc.innerHTML = `Fully offline setup using <strong>${transName}</strong> transcription and <strong>Local LLM (Qwen3)</strong> refinement. Runs completely offline, secure, and private on your machine.`;
+  }
+  else if (isOfflineAsr && isOtherLocalRef) {
     card.classList.add("speed-slow");
     icon.textContent = "🐢";
     badge.textContent = "Very Slow (~20-40s+)";
-    desc.innerHTML = `Fully offline execution (Local ASR + Local Ollama) is secure and private but extremely resource-intensive on CPU. Expect longer processing times.`;
+    desc.innerHTML = `Fully offline execution (Local ASR + Local ${refName}) is secure and private but extremely resource-intensive on CPU. Expect longer processing times.`;
   }
-  // 7. LM Studio transcription + Cloud refinement or none
-  else if (transProvider === "lm_studio" && refProvider === "none") {
+  else if (isLmStudioAsr && isNoRef) {
     card.classList.add("speed-moderate");
     icon.textContent = "📊";
     badge.textContent = "Moderate (~2.0-4.0s)";
     desc.innerHTML = `Using <strong>LM Studio (Local Whisper)</strong> for transcription with refinement disabled. Runs locally via your LM Studio server.`;
   }
-  else if (transProvider === "lm_studio" && (refProvider === "gemini" || refProvider === "openai" || refProvider === "openrouter" || refProvider === "custom")) {
+  else if (isLmStudioAsr && isCloudRef) {
     card.classList.add("speed-moderate");
     icon.textContent = "📊";
     badge.textContent = "Moderate (~3.5-6.0s)";
     desc.innerHTML = `Local <strong>LM Studio</strong> transcription combined with cloud refinement. A hybrid setup for local audio privacy with cloud cleanup quality.`;
   }
-  else if (transProvider === "lm_studio" && (refProvider === "ollama" || refProvider === "lm_studio")) {
+  else if (isLmStudioAsr && isLocalLlmRef) {
+    card.classList.add("speed-moderate");
+    icon.textContent = "📊";
+    badge.textContent = "Moderate (~4.0-8.0s)";
+    desc.innerHTML = `Local <strong>LM Studio</strong> transcription combined with <strong>Local LLM (Qwen3)</strong> refinement. Runs fully locally on your machine.`;
+  }
+  else if (isLmStudioAsr && isOtherLocalRef) {
     card.classList.add("speed-slow");
     icon.textContent = "🐢";
     badge.textContent = "Slow (~10-30s+)";
-    desc.innerHTML = `Fully local execution with <strong>LM Studio</strong> for both transcription and refinement. Private but may be slow depending on hardware.`;
+    desc.innerHTML = `Fully local execution with <strong>LM Studio</strong> for transcription and <strong>${refName}</strong> for refinement. Private but performance may vary depending on hardware.`;
   }
-  // 8. Any transcription + LM Studio refinement (not already covered)
-  else if ((transProvider === "gemini" || transProvider === "openai") && refProvider === "lm_studio") {
-    card.classList.add("speed-slow");
-    icon.textContent = "🐢";
-    badge.textContent = "Slow (~10-25s)";
-    desc.innerHTML = `Using a cloud transcription engine but refining with a local <strong>LM Studio LLM</strong> is slower due to local generation latency. Consider switching Refinement Provider to Gemini Cloud or None for a significant speedup.`;
-  }
-  else if ((transProvider === "local_parakeet" || transProvider === "local_whisper") && refProvider === "lm_studio") {
-    card.classList.add("speed-slow");
-    icon.textContent = "🐢";
-    badge.textContent = "Very Slow (~20-40s+)";
-    desc.innerHTML = `Fully offline execution (Local ASR + Local LM Studio) is secure and private but extremely resource-intensive. Expect longer processing times.`;
+  else {
+    card.classList.add("speed-moderate");
+    icon.textContent = "📊";
+    badge.textContent = "Moderate";
+    desc.innerHTML = `Transcription via <strong>${transName}</strong> and refinement via <strong>${refName}</strong>.`;
   }
 }
 
@@ -561,7 +713,23 @@ function updateSettingsVisibility() {
   checkOfflineModelStatus();
 }
 
-selectTranscriptionProvider.addEventListener("change", updateSettingsVisibility);
+selectTranscriptionProvider.addEventListener("change", async () => {
+  const provider = selectTranscriptionProvider.value;
+  const isOffline = (provider === "local_parakeet" || provider === "local_whisper");
+  
+  if (isOffline && selectTranscriptionLanguage.value !== "en") {
+    const modelName = provider === "local_parakeet" ? "Nvidia Parakeet" : "Local Whisper";
+    showToast(`${modelName} is an English-only model in offline mode. Language reverted to English.`, true);
+    selectTranscriptionLanguage.value = "en";
+    if (dashboardLanguageSelect) {
+      dashboardLanguageSelect.value = "en";
+    }
+  }
+  
+  populateLanguageDropdowns(getPreferredLanguagesFromUI(), provider);
+  await autoSaveConfig();
+  updateSettingsVisibility();
+});
 selectProvider.addEventListener("change", updateSettingsVisibility);
 selectLocalWhisperModel.addEventListener("change", checkOfflineModelStatus);
 selectLocalRefineModel.addEventListener("change", checkRefineModelStatus);
@@ -1027,7 +1195,9 @@ dashboardLanguageSelect.addEventListener("change", async () => {
 });
 
 selectTranscriptionLanguage.addEventListener("change", async () => {
-  dashboardLanguageSelect.value = selectTranscriptionLanguage.value;
+  if (dashboardLanguageSelect) {
+    dashboardLanguageSelect.value = selectTranscriptionLanguage.value;
+  }
   await autoSaveConfig();
 });
 
@@ -1051,6 +1221,7 @@ async function autoSaveConfig() {
     openai_model: inputOpenAiModel.value.trim(),
     local_whisper_model: selectLocalWhisperModel.value,
     transcription_language: selectTranscriptionLanguage.value,
+    preferred_languages: getPreferredLanguagesFromUI(),
     openai_refine_model: inputOpenAiRefineModel.value.trim(),
     openrouter_api_key: inputOpenRouterApiKey.value.trim(),
     openrouter_model: inputOpenRouterModel.value.trim(),
@@ -1317,9 +1488,26 @@ async function initConfig() {
     updateActivePresetBadges(config.prompt || "");
     
     selectTranscriptionProvider.value = config.transcription_provider || "gemini";
-    selectTranscriptionLanguage.value = config.transcription_language || "auto";
-    if (dashboardLanguageSelect) {
-      dashboardLanguageSelect.value = config.transcription_language || "auto";
+    
+    const preferredList = config.preferred_languages || Object.keys(ALL_LANGUAGES);
+    renderPreferredLanguagesGrid(preferredList);
+    populateLanguageDropdowns(preferredList, selectTranscriptionProvider.value);
+    
+    const activeLang = config.transcription_language || "auto";
+    const isOffline = (selectTranscriptionProvider.value === "local_parakeet" || selectTranscriptionProvider.value === "local_whisper");
+    
+    if (isOffline) {
+      selectTranscriptionLanguage.value = "en";
+      if (dashboardLanguageSelect) dashboardLanguageSelect.value = "en";
+    } else {
+      if (preferredList.includes(activeLang)) {
+        selectTranscriptionLanguage.value = activeLang;
+        if (dashboardLanguageSelect) dashboardLanguageSelect.value = activeLang;
+      } else {
+        const fallback = preferredList.includes("auto") ? "auto" : "en";
+        selectTranscriptionLanguage.value = fallback;
+        if (dashboardLanguageSelect) dashboardLanguageSelect.value = fallback;
+      }
     }
     inputOpenAiApiKey.value = config.openai_api_key || "";
     inputOpenAiModel.value = config.openai_model || "whisper-1";

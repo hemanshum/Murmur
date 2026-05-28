@@ -35,7 +35,7 @@
             <line x1="55.5" y1="70" x2="62" y2="70" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" class="logo-right-line" data-tauri-drag-region />
           </svg>
           <span class="brand-text" data-tauri-drag-region>Murmur</span>
-          <span class="brand-version" id="brand-version" data-tauri-drag-region>v0.2.0</span>
+          <span class="brand-version" id="brand-version" data-tauri-drag-region>v0.3.0</span>
         </div>
         <div class="window-drag-handle" data-tauri-drag-region></div>
         <div class="window-controls">
@@ -305,7 +305,7 @@
                         <option value="gemini">Google Gemini (Cloud)</option>
                         <option value="openai">OpenAI Whisper (Cloud)</option>
                         <option value="local_whisper">Local Whisper (Offline)</option>
-                        <option value="local_parakeet">Nvidia Parakeet V3 (Offline)</option>
+                        <option value="local_parakeet">Nvidia Parakeet V3 (Offline, English-only)</option>
                         <option value="lm_studio">LM Studio (Local)</option>
                       </select>
                     </div>
@@ -328,6 +328,13 @@
                         <option value="ko">Korean</option>
                         <option value="ru">Russian</option>
                       </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row preferred-languages-section">
+                    <label class="form-row-label">Preferred Languages (shown on Home screen)</label>
+                    <div class="preferred-languages-grid" id="preferred-languages-grid">
+                      <!-- Checkboxes will be dynamically rendered here -->
                     </div>
                   </div>
 
@@ -361,12 +368,12 @@
                       <label class="form-row-label" for="local-whisper-model">Local Whisper Model</label>
                       <div class="select-wrapper">
                         <select id="local-whisper-model" class="clean-select form-field-input">
-                          <option value="tiny">Tiny (Fastest, lowest accuracy)</option>
-                          <option value="base">Base (Fast, recommended)</option>
-                          <option value="small">Small (Balanced)</option>
-                          <option value="medium">Medium (Accurate, slower)</option>
-                          <option value="large-v3">Large V3 (Most accurate, slowest)</option>
-                          <option value="turbo">Turbo (Modern large variant)</option>
+                          <option value="tiny">Tiny (Fastest, lowest accuracy, ~75 MB)</option>
+                          <option value="base">Base (Fast, recommended, ~140 MB)</option>
+                          <option value="small">Small (Balanced, ~460 MB)</option>
+                          <option value="medium">Medium (Accurate, slower, ~1.5 GB)</option>
+                          <option value="large-v3">Large V3 (Most accurate, slowest, ~3.0 GB)</option>
+                          <option value="turbo">Turbo (Modern large variant, ~1.6 GB)</option>
                         </select>
                       </div>
                     </div>
@@ -637,7 +644,7 @@
                       <div class="model-card-header">
                         <div class="model-card-info">
                           <div class="model-card-name">Nvidia Parakeet V3</div>
-                          <div class="model-card-meta">Local Offline Engine | ~110 MB | Fast &amp; accurate</div>
+                          <div class="model-card-meta">Local Offline Engine | ~110 MB | Fast &amp; accurate (English-only)</div>
                         </div>
                         <div class="model-card-status">
                           <span class="model-status-badge not-downloaded" id="status-badge-parakeet_v3">Not Downloaded</span>
