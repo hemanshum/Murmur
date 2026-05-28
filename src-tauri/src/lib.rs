@@ -539,9 +539,21 @@ pub fn run() {
             is_transcribe_cancelled: AtomicBool::new(false),
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                let _ = window.hide();
-                api.prevent_close();
+            match event {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
+                tauri::WindowEvent::Moved(_) => {
+                    // When the window is dragged (via the data-tauri-drag-region header),
+                    // mousedown events don't reach JavaScript. This ensures the window
+                    // becomes focusable and comes to front during a drag.
+                    if window.label() == "main" {
+                        let _ = window.set_focusable(true);
+                        let _ = window.set_focus();
+                    }
+                }
+                _ => {}
             }
         })
         .setup(|app| {

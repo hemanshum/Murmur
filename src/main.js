@@ -1207,6 +1207,12 @@ checkboxNoiseGate.addEventListener("change", async () => {
 
 // Auto Save Settings
 async function autoSaveConfig() {
+  // Read current onboarding status so we don't overwrite it
+  let onboardingDone = true;
+  try {
+    onboardingDone = await invoke("get_onboarding_status");
+  } catch (_) {}
+
   const config = {
     api_key: inputApiKey.value,
     prompt: inputPrompt.value,
@@ -1234,6 +1240,7 @@ async function autoSaveConfig() {
     cancel_key: currentCancelKey,
     local_refine_model: selectLocalRefineModel.value,
     local_llm_thinking: checkboxLocalLlmThinking.checked,
+    onboarding_complete: onboardingDone,
   };
 
   try {
